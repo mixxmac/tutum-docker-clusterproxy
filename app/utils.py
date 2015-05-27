@@ -1,9 +1,14 @@
 import socket
 import string
 import re
+import logging
+import os
+import time
 
-from constants import LINK_ENV_PATTERN, LINK_ADDR_SUFFIX, LINK_PORT_SUFFIX, BACKEND_PORTS, VIRTUAL_HOST_SUFFIX
+import tutum
 
+from constants import LINK_ENV_PATTERN, LINK_ADDR_SUFFIX, LINK_PORT_SUFFIX, BACKEND_PORTS, VIRTUAL_HOST_SUFFIX, \
+    API_ERROR_RETRY_INTERVAL
 
 ENDPOINT_MATCH = re.compile(r"(?P<proto>tcp|udp):\/\/(?P<addr>[^:]*):(?P<port>.*)")
 
@@ -47,7 +52,7 @@ def parse_vhost(virtualhost, envvars):
     return vhost
 
 
-def parse_backend_routes(dict_var):
+def parse_links_not_in_tutum(dict_var):
     # Input:  {'HELLO_2_PORT_80_TCP_ADDR': '10.7.0.5}
     #          'HELLO_1_PORT_80_TCP_ADDR': '10.7.0.3}
     #          'HELLO_2_PORT_80_TCP_PORT': '80'
@@ -74,7 +79,7 @@ def parse_backend_routes(dict_var):
     return addr_port_dict
 
 
-def parse_backend_routes_tutum(container_links):
+def parse_links_in_tutum(container_links):
     # Input:  [{"endpoints": {"80/tcp": "tcp://10.7.0.3:80"},
     #           "name": "hello-1",
     #           "from_container": "/api/v1/container/702d18d4-7934-4715-aea3-c0637f1a4129/",
@@ -88,8 +93,8 @@ def parse_backend_routes_tutum(container_links):
     # Output: {'HELLO_1': {'proto': 'tcp', 'addr': '10.7.0.3', 'port': '80'},
     #          'HELLO_2': {'proto': 'tcp', 'addr': '10.7.0.5', 'port': '80'}}
 
-    if not hasattr(parse_backend_routes_tutum, "endpoint_match"):
-        parse_backend_routes_tutum.endpoint_match = re.compile(r"(?P<proto>tcp|udp):\/\/(?P<addr>[^:]*):(?P<port>.*)")
+    if not hasattr(parse_links_in_tutum, "endpoint_match"):
+        parse_links_in_tutum.endpoint_match = re.compile(r"(?P<proto>tcp|udp):\/\/(?P<addr>[^:]*):(?P<port>.*)")
 
     routes = {}
     for link in container_links:
@@ -97,7 +102,7 @@ def parse_backend_routes_tutum(container_links):
             if port in ["%s/tcp" % x for x in BACKEND_PORTS]:
                 container_name = link.get("name").upper().replace("-", "_")
                 if container_name:
-                    routes[container_name] = parse_backend_routes_tutum.endpoint_match.match(endpoint).groupdict()
+                    routes[container_name] = parse_links_in_tutum.endpoint_match.match(endpoint).groupdict()
     return routes
 
 
@@ -106,3 +111,35 @@ def parse_uuid_from_resource_uri(uri):
     if len(terms) < 2:
         return ""
     return terms[-1]
+
+
+def fetch_tutum_obj(uri):
+    if not uri:
+        return None
+
+    while True:
+        try:
+            obj = tutum.Utils.fetch_by_resource_uri(uri)
+            break
+        except Exception as e:
+            logging.error(e)
+            time.sleep(API_ERROR_RETRY_INTERVAL)
+    return obj
+
+
+def load_haproxy_envvars(container=None):
+    envvars = dict()
+    if container:
+        for pair in container.container_envvars:
+            envvars[pair['key']] = pair['value']
+    else:
+        envvars = os.environ
+
+    return envvars
+
+
+def load_links_info(container=None):
+    if container:
+        return parse_links_in_tutum(container.linked_to_container)
+    else:
+        return parse_links_not_in_tutum(os.environ)

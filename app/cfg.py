@@ -3,7 +3,6 @@ from collections import OrderedDict
 
 from constants import *
 
-
 logger = logging.getLogger("tutum_haproxy")
 
 
@@ -96,7 +95,7 @@ def cfg_backend(backend_routes, vhost):
                 else:
                     backend = []
                     if SESSION_COOKIE:
-                        backend.append("appsession %s len 64 timeout 3h request-learn prefix" % (SESSION_COOKIE, ))
+                        backend.append("appsession %s len 64 timeout 3h request-learn prefix" % (SESSION_COOKIE,))
 
                     backend.append("balance %s" % BALANCE)
                     for container_name, addr_port in backend_routes.iteritems():
@@ -120,7 +119,7 @@ def cfg_backend(backend_routes, vhost):
     else:
         backend = []
         if SESSION_COOKIE:
-            backend.append("appsession %s len 64 timeout 3h request-learn prefix" % (SESSION_COOKIE, ))
+            backend.append("appsession %s len 64 timeout 3h request-learn prefix" % (SESSION_COOKIE,))
 
         backend.append("balance %s" % BALANCE)
         for container_name, addr_port in backend_routes.iteritems():
