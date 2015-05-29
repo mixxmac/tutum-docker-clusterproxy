@@ -32,7 +32,7 @@ def run_haproxy(container_uri=None):
     container = fetch_tutum_obj(container_uri)
     envvars = load_haproxy_envvars(container)
     links = load_links_info(container)
-    vhost = parse_vhost(VIRTUAL_HOST, envvars)
+    vhost = parse_vhost(envvars)
 
     if container_uri:
         global PREVIOUS_CFG_TEXT, HAPROXY_CURRENT_SUBPROCESS
@@ -112,7 +112,6 @@ def main():
         while True:
             run_haproxy()
             time.sleep(1)
-
 
 if __name__ == "__main__":
     main()

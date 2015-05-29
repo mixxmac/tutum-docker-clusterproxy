@@ -22,8 +22,8 @@ Then, run `tutum/haproxy` linking it to the target containers:
 The `tutum/haproxy` container will listen in port 80 and forward requests to both `web1` and `web2` backends using a `roundrobin` algorithm.
 
 
-Configuration
--------------
+Configuration - on Haproxy Container
+------------------------------------
 
 You can overwrite the following HAProxy configuration options:
 
@@ -40,12 +40,15 @@ You can overwrite the following HAProxy configuration options:
 * `SSL_CERT` (default: `**None**`): An optional certificate to use on the binded port. It should have both the private and public keys content. If set, port 443 will be used to handle HTTPS requests.
 * `SSL_BIND_OPTIONS` (default: `no-sslv3`): Optional. Explicitly set which SSL bind options will be used for the SSL server. This sets the HAProxy `ssl-default-bind-options` configuration setting. The default will allow only TLSv1.0+ to be used on the SSL server.
 * `SSL_BIND_CIPHERS` (default: `None`): Optional. Explicitly set which SSL ciphers will be used for the SSL server. This sets the HAProxy `ssl-default-bind-ciphers` configuration setting.
-* `VIRTUAL_HOST` (default: `**None**`): Optional. Let HAProxy route by domain name. Format `LINK_ALIAS=DOMAIN`, comma separated.
 * `STATS_PORT` (default: `1936`): Port for the haproxy stats section. If this port is published, stats can be accessed at `http://<host-ip>:<STATS_PORT>/`
 * `STATS_AUTH` (default: `stats:stats`): Username and password required to access the haproxy stats.
 
 Check [the HAProxy configuration manual](http://haproxy.1wt.eu/download/1.4/doc/configuration.txt) for more information on the above.
 
+Configuration - on linked Containers
+------------------------------------
+
+* `VIRTUAL_HOST`: The virtual host for this container. Format: `domain1, domain2`, comma separated
 
 Usage within Tutum
 ------------------
@@ -96,33 +99,7 @@ Use the following:
 
 #### I want to set up virtual host routing by domain
 
-There are two ways to configure virtual hosts with this image.
-
-**Method 1: configuring the proxy**
-
-Example:
-
-    docker run -d --name webapp1 tutum/hello-world
-    docker run -d --name webapp2 tutum/hello-world
-    docker run -d --link webapp1:webapp1 --link webapp2:webapp2 -e VIRTUAL_HOST="webapp1=www.webapp1.com, www.webapp1.org, webapp2=www.webapp2.com" -p 80:80 tutum/haproxy
-
-Notice that the format of `VIRTUAL_HOST` is `LINK_ALIAS=DOMAIN`, where `LINK_ALIAS` must match the *beginning* of the link name and `DOMAIN` is the HTTP host that you want the proxy to use to forward requests to that backend.
-
-In the example above, when you access `http://www.webapp1.com` or `http://www.webapp1.org`, it will show the service running in container `webapp1`, and `http://www.webapp2.com` will go to container `webapp2`.
-
-If you use the following:
-
-    docker run -d --name webapp1 tutum/hello-world
-    docker run -d --name webapp2-1 tutum/hello-world
-    docker run -d --name webapp2-2 tutum/hello-world
-    docker run -d --link webapp1:webapp1 --link webapp2-1:webapp2-1 --link webapp2-2:webapp2-2 -e VIRTUAL_HOST="webapp1=www.webapp1.com, webapp2=www.webapp2.com" -p 80:80 tutum/haproxy
-
-When you access `http://www.webapp1.com`, it will show the service running in container `webapp1`, and `http://www.webapp2.com` will go to both containers `webapp2-1` and `webapp2-2` using round robin (or whatever is configured in `BALANCE`).
-
-
-**Method 2: configuring the webapp backends**
-
-Alternatively, virtual hosts can be configured by the proxy reading linked container environment variables (`VIRTUAL_HOST`). Here is an example:
+Virtual hosts can be configured by the proxy reading linked container environment variables (`VIRTUAL_HOST`). Here is an example:
 
     docker run -d -e VIRTUAL_HOST="www.webapp1.com, www.webapp1.org" --name webapp1 tutum/hello-world
     docker run -d -e VIRTUAL_HOST=www.webapp2.com --name webapp2 tutum/hello-world

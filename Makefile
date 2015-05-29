@@ -46,14 +46,6 @@ test-without-tutum:build
 	curl --retry 10 --retry-delay 5 -L -I http://localhost:8000 | grep "200 OK"
 	@echo
 
-	@echo "==> Testing virtual host: specified in haproxy container"
-	docker run -d --name lb2 --link web-a:web-a --link web-b:web-b -e VIRTUAL_HOST=" web-a = www.web-a.org, www.test.org, web-b = www.web-b.org " -p 8001:80 tifayuki/haproxy-test
-	wget --spider --retry-connrefused --no-check-certificate -q -T 5 127.0.0.1:8001 || true
-	curl --retry 10 --retry-delay 5 -H 'Host:www.web-a.org' 127.0.0.1:8001 | grep 'My hostname is web-a'
-	curl --retry 10 --retry-delay 5 -H 'Host:www.test.org' 127.0.0.1:8001 | grep 'My hostname is web-a'
-	curl --retry 10 --retry-delay 5 -H 'Host:www.web-b.org' 127.0.0.1:8001 | grep 'My hostname is web-b'
-	@echo
-
 	@echo "==> Testing virtual host: specified in linked containers"
 	docker run -d --name web-c -e HOSTNAME=web-c -e VIRTUAL_HOST=web-c.org tutum/hello-world
 	docker run -d --name web-d -e HOSTNAME=web-d -e VIRTUAL_HOST="web-d.org, test.org" tutum/hello-world
@@ -86,7 +78,7 @@ test-without-tutum:build
 	curl --retry 10 --retry-delay 5 -sSfL -H 'Host:web-e.org:8004' 127.0.0.1:8004 | grep 'My hostname is web-e'
 
 push-image: build
-	@echo "=> Pushing the image to tifayuki/haproxy"
+	@echo "=> Pushing the image to tifayuki/haproxy-text"
 	@echo "=> Logging in to docker"
 	@docker login -u $(DOCKER_USER) -p $(DOCKER_PASS) -e a@a.com
 	docker push tifayuki/haproxy-test
@@ -107,14 +99,6 @@ test-with-tutum:push-image clean-tutum-service
 	tutum service run --sync --name $(random)lb1 --link $(random)web-a:web-a --link $(random)web-b:web-b -p 8000:80 tifayuki/haproxy-test
 	wget --spider --retry-connrefused --no-check-certificate -q -T 5 $(NODE_FQDN):8000 || true
 	curl --retry 10 --retry-delay 5 -sSfL -I $(NODE_FQDN):8000 | grep "200 OK"
-	@echo
-
-	@echo "==> Testing virtual host: specified in haproxy container with tutum"
-	tutum service run --role global --sync --name $(random)lb2 --link $(random)web-a:web-a --link $(random)web-b:web-b -e VIRTUAL_HOST=" web-a = www.web-a.org, www.test.org, web-b = www.web-b.org " -p 8001:80 tifayuki/haproxy-test
-	wget --spider --retry-connrefused --no-check-certificate -q -T 5 $(NODE_FQDN):8001 || true
-	curl --retry 10 --retry-delay 5 -sSfL -H 'Host:www.web-a.org' $(NODE_FQDN):8001 | grep 'My hostname is web-a'
-	curl --retry 10 --retry-delay 5 -sSfL -H 'Host:www.test.org' $(NODE_FQDN):8001 | grep 'My hostname is web-a'
-	curl --retry 10 --retry-delay 5 -sSfL -H 'Host:www.web-b.org' $(NODE_FQDN):8001 | grep 'My hostname is web-b'
 	@echo
 
 	@echo "==> Testing virtual host: specified in linked containers with tutum"

@@ -15,7 +15,6 @@ SSL_BIND_CIPHERS = os.getenv("SSL_BIND_CIPHERS", None)
 SESSION_COOKIE = os.getenv("SESSION_COOKIE")
 OPTION = os.getenv("OPTION", "redispatch, httplog, dontlognull, forwardfor").split(",")
 TIMEOUT = os.getenv("TIMEOUT", "connect 5000, client 50000, server 50000").split(",")
-VIRTUAL_HOST = os.getenv("VIRTUAL_HOST", None)
 TUTUM_CONTAINER_API_URI = os.getenv("TUTUM_CONTAINER_API_URI", None)
 TUTUM_SERVICE_API_URI = os.getenv("TUTUM_SERVICE_API_URI", None)
 STATS_PORT = os.getenv("STATS_PORT", "1936")
@@ -31,5 +30,4 @@ LINK_ENV_PATTERN = "_PORT_%s_TCP" % BACKEND_PORT
 LINK_ADDR_SUFFIX = LINK_ENV_PATTERN + "_ADDR"
 LINK_PORT_SUFFIX = LINK_ENV_PATTERN + "_PORT"
 VIRTUAL_HOST_SUFFIX = "_ENV_VIRTUAL_HOST"
-
 API_ERROR_RETRY_INTERVAL = 10

@@ -1,9 +1,5 @@
 #!/bin/bash
 
-if [ "${VIRTUAL_HOST}" = "**None**" ]; then
-    unset VIRTUAL_HOST
-fi
-
 if [ "${SSL_CERT}" = "**None**" ]; then
     unset SSL_CERT
 fi

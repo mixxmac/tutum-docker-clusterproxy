@@ -36,19 +36,14 @@ def parse_vhost_from_envvar(envvars):
     return vhost
 
 
-def parse_vhost(virtualhost, envvars):
-    # Input:  virtualhost - None or "web1=a.com, b.com, web=c.com"
-    #         envvars     - {'WEB_1_ENV_VIRTUAL_HOST':'a.com', 'b.com', 'WEB_2_ENV_VIRTUAL_HOST':'c.com'}
+def parse_vhost( envvars):
+    # Input:  {'WEB_1_ENV_VIRTUAL_HOST':'a.com, b.com', 'WEB_2_ENV_VIRTUAL_HOST':'c.com'}
     # Output: {'web1':['a.com', 'b.com'], 'web2':['c.com']
     vhost = {}
-    if virtualhost:
-        vhost.update(parse_vhost_from_envvar(virtualhost))
-    if not vhost:
-        # try to parse vhost specified in the linked containers
-        for name, value in envvars.iteritems():
-            position = string.find(name, VIRTUAL_HOST_SUFFIX)
-            if position != -1 and value != "**None**":
-                vhost.update(parse_vhost_from_envvar("%s=%s" % (name[:position], value)))
+    for name, value in envvars.iteritems():
+        position = string.find(name, VIRTUAL_HOST_SUFFIX)
+        if position != -1:
+            vhost.update(parse_vhost_from_envvar("%s=%s" % (name[:position], value)))
     return vhost
 
 
